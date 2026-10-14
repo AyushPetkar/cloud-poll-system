@@ -1,7 +1,8 @@
 // Cloud Poll Frontend Logic
 // Three-Tier Architecture: Presentation Layer (Netlify) -> Application Layer (Render) -> Database (MongoDB Atlas)
 
-const DEFAULT_API = localStorage.getItem('CLOUD_POLL_API') || 'http://localhost:5000';
+const PRODUCTION_API = 'https://cloud-poll-system.onrender.com';
+const DEFAULT_API = localStorage.getItem('CLOUD_POLL_API') || PRODUCTION_API;
 
 let API_BASE_URL = DEFAULT_API;
 let allPolls = [];
