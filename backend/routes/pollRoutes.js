@@ -2,23 +2,23 @@ const express = require('express');
 const router = express.Router();
 const Poll = require('../models/Poll');
 
-// 1. GET ALL POLLS (with optional search)
+// 1. GET ALL POLLS (filtered by groupCode and optional search)
 router.get('/', async (req, res) => {
   try {
-    const { search } = req.query;
-    let query = {};
+    const { search, group } = req.query;
+    const targetGroup = (group || 'general').trim().toLowerCase();
+
+    let query = { groupCode: targetGroup };
 
     if (search) {
-      query = {
-        $or: [
-          { question: { $regex: search, $options: 'i' } },
-          { category: { $regex: search, $options: 'i' } },
-        ],
-      };
+      query.$or = [
+        { question: { $regex: search, $options: 'i' } },
+        { category: { $regex: search, $options: 'i' } },
+      ];
     }
 
     const polls = await Poll.find(query).sort({ createdAt: -1 });
-    res.json({ success: true, count: polls.length, data: polls });
+    res.json({ success: true, count: polls.length, group: targetGroup, data: polls });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -40,7 +40,7 @@ router.get('/:id', async (req, res) => {
 // 3. CREATE NEW POLL
 router.post('/', async (req, res) => {
   try {
-    const { question, category, options } = req.body;
+    const { question, category, options, groupCode } = req.body;
 
     if (!question || !options || !Array.isArray(options) || options.length < 2) {
       return res.status(400).json({
@@ -61,9 +61,12 @@ router.post('/', async (req, res) => {
       });
     }
 
+    const cleanGroup = (groupCode || 'general').trim().toLowerCase();
+
     const newPoll = await Poll.create({
       question: question.trim(),
       category: category ? category.trim() : 'General',
+      groupCode: cleanGroup,
       options: formattedOptions,
       totalVotes: 0,
     });

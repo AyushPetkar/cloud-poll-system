@@ -5,6 +5,7 @@ const PRODUCTION_API = 'https://cloud-poll-system.onrender.com';
 const DEFAULT_API = localStorage.getItem('CLOUD_POLL_API') || PRODUCTION_API;
 
 let API_BASE_URL = DEFAULT_API;
+let currentRoom = localStorage.getItem('CLOUD_POLL_ROOM') || 'general';
 let allPolls = [];
 
 // DOM Elements
@@ -12,6 +13,10 @@ const apiUrlInput = document.getElementById('apiUrlInput');
 const saveApiBtn = document.getElementById('saveApiBtn');
 const apiStatusMessage = document.getElementById('apiStatusMessage');
 const backendDot = document.getElementById('backendDot');
+const roomCodeInput = document.getElementById('roomCodeInput');
+const switchRoomBtn = document.getElementById('switchRoomBtn');
+const currentRoomDisplay = document.getElementById('currentRoomDisplay');
+const formRoomDisplay = document.getElementById('formRoomDisplay');
 const createPollForm = document.getElementById('createPollForm');
 const pollQuestion = document.getElementById('pollQuestion');
 const pollCategory = document.getElementById('pollCategory');
@@ -25,10 +30,17 @@ const toastContainer = document.getElementById('toastContainer');
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
   apiUrlInput.value = API_BASE_URL;
+  if (roomCodeInput) roomCodeInput.value = currentRoom;
+  updateRoomDisplays();
   checkBackendHealth();
   fetchPolls();
   setupEventListeners();
 });
+
+function updateRoomDisplays() {
+  if (currentRoomDisplay) currentRoomDisplay.textContent = currentRoom;
+  if (formRoomDisplay) formRoomDisplay.textContent = currentRoom;
+}
 
 function setupEventListeners() {
   // Connect / Save API URL
@@ -41,6 +53,24 @@ function setupEventListeners() {
     checkBackendHealth();
     fetchPolls();
   });
+
+  // Switch Room / Group Code
+  if (switchRoomBtn) {
+    switchRoomBtn.addEventListener('click', () => {
+      const code = (roomCodeInput.value || '').trim().toLowerCase() || 'general';
+      currentRoom = code;
+      localStorage.setItem('CLOUD_POLL_ROOM', currentRoom);
+      updateRoomDisplays();
+      showToast(`Entered Private Room: "${currentRoom}"`, 'info');
+      fetchPolls();
+    });
+  }
+
+  if (roomCodeInput) {
+    roomCodeInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') switchRoomBtn.click();
+    });
+  }
 
   // Dynamic Options
   addOptionBtn.addEventListener('click', () => {
@@ -83,7 +113,7 @@ function setupEventListeners() {
       const response = await fetch(`${API_BASE_URL}/api/polls`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, category, options }),
+        body: JSON.stringify({ question, category, options, groupCode: currentRoom }),
       });
 
       const result = await response.json();
@@ -153,17 +183,17 @@ async function checkBackendHealth() {
   }
 }
 
-// 2. Fetch Polls (GET /api/polls)
+// 2. Fetch Polls (GET /api/polls?group=...)
 async function fetchPolls() {
   try {
     pollsList.innerHTML = `
       <div class="loading-state">
         <div class="spinner"></div>
-        <p>Loading polls...</p>
+        <p>Loading polls for room <strong>"${escapeHtml(currentRoom)}"</strong>...</p>
       </div>
     `;
 
-    const res = await fetch(`${API_BASE_URL}/api/polls`);
+    const res = await fetch(`${API_BASE_URL}/api/polls?group=${encodeURIComponent(currentRoom)}`);
     if (!res.ok) throw new Error('Could not fetch polls from backend');
     const result = await res.json();
 
@@ -186,8 +216,10 @@ function renderPolls(polls) {
   if (!polls || polls.length === 0) {
     pollsList.innerHTML = `
       <div class="empty-state">
-        <p>No active polls found.</p>
-        <p style="font-size: 0.85rem; margin-top: 0.4rem;">Create the first poll using the form on the left!</p>
+        <p>No active polls found in room <strong>"${escapeHtml(currentRoom)}"</strong>.</p>
+        <p style="font-size: 0.85rem; margin-top: 0.4rem;">
+          You are the first one here! Create a poll on the left for your group.
+        </p>
       </div>
     `;
     return;

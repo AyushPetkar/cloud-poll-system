@@ -49,6 +49,25 @@
       </div>
     </section>
 
+    <!-- Group / Room Privacy Bar -->
+    <section class="room-bar">
+      <div class="room-inner">
+        <div class="room-active-info">
+          <span class="room-pill">🔒 Active Room: <strong id="currentRoomDisplay">general</strong></span>
+          <span class="room-hint-text">Only people with this Room Code can view and vote on these polls.</span>
+        </div>
+        <div class="room-input-group">
+          <input 
+            type="text" 
+            id="roomCodeInput" 
+            placeholder="Enter Group Code (e.g. cs101, team-a)" 
+            value="general"
+          />
+          <button id="switchRoomBtn" class="btn btn-primary">Enter Room</button>
+        </div>
+      </div>
+    </section>
+
     <!-- Notification Toast Area -->
     <div id="toastContainer" class="toast-container"></div>
 
@@ -57,7 +76,7 @@
       <section class="card create-card">
         <div class="card-header">
           <h2>Create a New Poll</h2>
-          <p class="card-desc">Ask a question and start collecting community votes.</p>
+          <p class="card-desc">Ask a question for room: <strong id="formRoomDisplay" class="highlight-room">general</strong></p>
         </div>
 
         <form id="createPollForm">

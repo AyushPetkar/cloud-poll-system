@@ -25,6 +25,13 @@ const PollSchema = new mongoose.Schema(
       default: 'General',
       trim: true,
     },
+    groupCode: {
+      type: String,
+      default: 'general',
+      trim: true,
+      lowercase: true,
+      index: true,
+    },
     options: {
       type: [OptionSchema],
       validate: [
