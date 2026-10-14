@@ -200,17 +200,32 @@ function renderPolls(polls) {
     const pollCard = document.createElement('div');
     pollCard.className = 'poll-item';
 
+    // Check if current user already voted on this poll
+    const userVotedOptionId = localStorage.getItem('voted_' + poll._id);
+    const hasVoted = Boolean(userVotedOptionId);
+
     let optionsHTML = '';
     poll.options.forEach((opt) => {
       const votes = opt.votes || 0;
       const percentage = totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0;
+      const isMyVote = userVotedOptionId === opt._id;
+
+      const cardClasses = ['option-card'];
+      if (hasVoted) cardClasses.push('disabled');
+      if (isMyVote) cardClasses.push('my-vote');
+
+      const clickAction = hasVoted
+        ? `showToast('You have already voted on this poll', 'info')`
+        : `castVote('${poll._id}', '${opt._id}')`;
+
+      const myVoteBadge = isMyVote ? `<span class="my-vote-pill">✓ Your Vote</span>` : '';
 
       optionsHTML += `
-        <div class="option-card" onclick="castVote('${poll._id}', '${opt._id}')" title="Click to vote for '${escapeHtml(opt.text)}'">
+        <div class="${cardClasses.join(' ')}" onclick="${clickAction}" title="${hasVoted ? 'You already voted on this poll' : 'Click to vote for ' + escapeHtml(opt.text)}">
           <div class="option-progress-bg" style="width: ${percentage}%"></div>
           <div class="option-content">
-            <span class="option-label">🗳️ ${escapeHtml(opt.text)}</span>
-            <span class="option-stats">${votes} votes (${percentage}%)</span>
+            <span class="option-label">🗳️ ${escapeHtml(opt.text)} ${myVoteBadge}</span>
+            <span class="option-stats">${votes} ${votes === 1 ? 'vote' : 'votes'} (${percentage}%)</span>
           </div>
         </div>
       `;
@@ -222,9 +237,16 @@ function renderPolls(polls) {
       year: 'numeric',
     });
 
+    const votedStatusBadge = hasVoted
+      ? `<span class="poll-voted-notice">✓ Vote Recorded</span>`
+      : '';
+
     pollCard.innerHTML = `
       <div class="poll-meta">
-        <span class="poll-category">${escapeHtml(poll.category || 'General')}</span>
+        <div>
+          <span class="poll-category">${escapeHtml(poll.category || 'General')}</span>
+          ${votedStatusBadge}
+        </div>
         <span class="poll-total-votes">Total: ${totalVotes} ${totalVotes === 1 ? 'vote' : 'votes'}</span>
       </div>
       <h3 class="poll-title">${escapeHtml(poll.question)}</h3>
@@ -243,6 +265,11 @@ function renderPolls(polls) {
 
 // 4. Cast Vote (PATCH /api/polls/:id/vote)
 async function castVote(pollId, optionId) {
+  // Prevent duplicate voting
+  if (localStorage.getItem('voted_' + pollId)) {
+    return showToast('You have already voted on this poll!', 'error');
+  }
+
   try {
     const res = await fetch(`${API_BASE_URL}/api/polls/${pollId}/vote`, {
       method: 'PATCH',
@@ -255,7 +282,10 @@ async function castVote(pollId, optionId) {
       throw new Error(result.message || 'Failed to submit vote');
     }
 
-    showToast('Vote counted!', 'success');
+    // Save vote to lock in user choice
+    localStorage.setItem('voted_' + pollId, optionId);
+    showToast('Your vote has been counted!', 'success');
+
     // Update local poll data for smooth immediate render
     const updatedIndex = allPolls.findIndex((p) => p._id === pollId);
     if (updatedIndex !== -1) {
@@ -283,6 +313,7 @@ async function deletePoll(pollId) {
       throw new Error(result.message || 'Failed to delete poll');
     }
 
+    localStorage.removeItem('voted_' + pollId);
     showToast('Poll deleted successfully', 'success');
     allPolls = allPolls.filter((p) => p._id !== pollId);
     renderPolls(allPolls);

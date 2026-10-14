@@ -424,6 +424,44 @@ input[type="text"]:focus {
   background-color: #faf5ff;
 }
 
+.option-card.disabled {
+  cursor: default;
+}
+
+.option-card.disabled:hover {
+  border-color: var(--border);
+  background-color: white;
+}
+
+.option-card.my-vote {
+  border-color: var(--accent);
+  background-color: #ecfdf5;
+}
+
+.option-card.my-vote:hover {
+  border-color: var(--accent);
+  background-color: #ecfdf5;
+}
+
+.my-vote-pill {
+  background: #10b981;
+  color: white;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
+  margin-left: 0.4rem;
+}
+
+.poll-voted-notice {
+  font-size: 0.78rem;
+  color: var(--accent);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
 .option-progress-bg {
   position: absolute;
   top: 0;
