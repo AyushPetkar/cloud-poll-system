@@ -10,18 +10,19 @@ const PORT = process.env.PORT || 5000;
 // Connect to MongoDB Atlas
 connectDB();
 
-// CORS Configuration
-// Allows the deployed Netlify frontend or local development
-const allowedOrigins = process.env.FRONTEND_URL
-  ? [process.env.FRONTEND_URL, 'http://localhost:3000', 'http://127.0.0.1:5500', 'http://localhost:5173']
-  : '*';
-
+// CORS Configuration - Permissive for deployed Netlify frontend and local testing
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      // Allow all origins (Netlify, localhost, etc.)
+      callback(null, true);
+    },
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
   })
 );
+app.options('*', cors());
 
 // Body Parser Middleware
 app.use(express.json());
