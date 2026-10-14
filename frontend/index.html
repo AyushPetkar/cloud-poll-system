@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cloud Poll — Online Polling System</title>
+  <meta name="description" content="Simple, fast, and interactive real-time online polling application." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">📊</div>
+        <div>
+          <h1>Cloud Poll</h1>
+          <p class="subtitle">Real-time opinion polls and instant results</p>
+        </div>
+      </div>
+
+      <!-- Server Status -->
+      <div class="architecture-pills">
+        <span class="pill" title="Server Status">
+          <span class="dot" id="backendDot"></span> Live Server
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <!-- API Configuration Bar -->
+    <section class="config-bar">
+      <div class="config-inner">
+        <label for="apiUrlInput"><strong>API Server URL:</strong></label>
+        <div class="input-with-button">
+          <input 
+            type="text" 
+            id="apiUrlInput" 
+            placeholder="e.g. https://your-backend.onrender.com or http://localhost:5000" 
+            value="http://localhost:5000"
+          />
+          <button id="saveApiBtn" class="btn btn-secondary">Connect</button>
+        </div>
+        <span id="apiStatusMessage" class="status-msg">Checking connection...</span>
+      </div>
+    </section>
+
+    <!-- Notification Toast Area -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <div class="grid-layout">
+      <!-- Left Column: Create New Poll Form -->
+      <section class="card create-card">
+        <div class="card-header">
+          <h2>Create a New Poll</h2>
+          <p class="card-desc">Ask a question and start collecting community votes.</p>
+        </div>
+
+        <form id="createPollForm">
+          <div class="form-group">
+            <label for="pollQuestion">Poll Question *</label>
+            <input 
+              type="text" 
+              id="pollQuestion" 
+              placeholder="e.g. What is your favorite programming language?" 
+              required 
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="pollCategory">Category</label>
+            <input 
+              type="text" 
+              id="pollCategory" 
+              placeholder="e.g. Technology, Lifestyle, Education" 
+              value="Technology" 
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Options (Minimum 2) *</label>
+            <div id="optionsContainer" class="options-container">
+              <div class="option-row">
+                <input type="text" class="poll-option-input" placeholder="Option 1" required />
+              </div>
+              <div class="option-row">
+                <input type="text" class="poll-option-input" placeholder="Option 2" required />
+              </div>
+            </div>
+            <button type="button" id="addOptionBtn" class="btn btn-outline-small">+ Add Another Option</button>
+          </div>
+
+          <button type="submit" id="submitPollBtn" class="btn btn-primary full-width">
+            Publish Poll
+          </button>
+        </form>
+      </section>
+
+      <!-- Right Column: Active Polls & Results -->
+      <section class="card list-card">
+        <div class="card-header flex-between">
+          <div>
+            <h2>Active Polls</h2>
+            <p class="card-desc">Vote on topics and view instant percentages.</p>
+          </div>
+          <button id="refreshBtn" class="btn btn-icon" title="Refresh Polls">🔄</button>
+        </div>
+
+        <!-- Search & Filter Controls -->
+        <div class="filter-bar">
+          <input 
+            type="text" 
+            id="searchInput" 
+            placeholder="🔍 Search polls by question or category..." 
+          />
+        </div>
+
+        <!-- Polls Container -->
+        <div id="pollsList" class="polls-list">
+          <div class="loading-state">
+            <div class="spinner"></div>
+            <p>Loading polls...</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <p>&copy; 2026 Cloud Poll. All rights reserved.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
