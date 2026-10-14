@@ -18,7 +18,7 @@ app.use(
       callback(null, true);
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-key'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-key', 'x-creator-token'],
     credentials: true,
   })
 );

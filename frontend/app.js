@@ -121,7 +121,12 @@ function setupEventListeners() {
         throw new Error(result.message || 'Failed to create poll');
       }
 
-      showToast('Poll created successfully!', 'success');
+      // Save creator token so only this browser can delete this poll
+      if (result.creatorToken && result.data && result.data._id) {
+        localStorage.setItem('creator_' + result.data._id, result.creatorToken);
+      }
+
+      showToast('Poll created successfully! You are the creator.', 'success');
       createPollForm.reset();
       pollCategory.value = 'Technology';
       // Reset options back to 2 rows
@@ -273,6 +278,13 @@ function renderPolls(polls) {
       ? `<span class="poll-voted-notice">✓ Vote Recorded</span>`
       : '';
 
+    // Check if current user is the creator of this poll
+    const isCreator = Boolean(localStorage.getItem('creator_' + poll._id));
+    const creatorBadge = isCreator ? `<span class="creator-badge">👑 You Created This</span>` : '';
+    const deleteButtonHTML = isCreator
+      ? `<button class="btn-delete" onclick="deletePoll('${poll._id}')" title="Delete your poll">🗑️ Delete (Creator)</button>`
+      : '';
+
     pollCard.innerHTML = `
       <div class="poll-meta">
         <div>
@@ -286,8 +298,8 @@ function renderPolls(polls) {
         ${optionsHTML}
       </div>
       <div class="poll-footer">
-        <span>Created: ${formattedDate}</span>
-        <button class="btn-delete" onclick="deletePoll('${poll._id}')">🗑️ Delete</button>
+        <span>Created: ${formattedDate} ${creatorBadge}</span>
+        ${deleteButtonHTML}
       </div>
     `;
 
@@ -331,30 +343,39 @@ async function castVote(pollId, optionId) {
   }
 }
 
-// 5. Delete Poll (DELETE /api/polls/:id - Protected with Admin Password)
+// 5. Delete Poll (DELETE /api/polls/:id - Only the Creator can delete)
 async function deletePoll(pollId) {
-  const adminPassword = prompt('🔒 Admin Access Required\nEnter the Admin Password to delete this poll:');
-  if (adminPassword === null) return; // User cancelled
-  if (!adminPassword.trim()) {
-    return showToast('Admin password is required to delete polls', 'error');
+  const creatorToken = localStorage.getItem('creator_' + pollId);
+
+  // If this user is not the creator, require the master admin override key
+  if (!creatorToken) {
+    const adminPassword = prompt('🔒 Only the creator of this poll can delete it.\nIf you are an administrator, enter the master key:');
+    if (!adminPassword || !adminPassword.trim()) return;
+    return executeDelete(pollId, { 'x-admin-key': adminPassword.trim() });
   }
 
+  if (!confirm('Are you sure you want to delete your poll?')) return;
+  executeDelete(pollId, { 'x-creator-token': creatorToken });
+}
+
+async function executeDelete(pollId, authHeaders) {
   try {
     const res = await fetch(`${API_BASE_URL}/api/polls/${pollId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        'x-admin-key': adminPassword.trim(),
+        ...authHeaders,
       },
     });
 
     const result = await res.json();
     if (!res.ok || !result.success) {
-      throw new Error(result.message || 'Unauthorized or failed to delete poll');
+      throw new Error(result.message || 'Unauthorized: Only the creator can delete this poll');
     }
 
+    localStorage.removeItem('creator_' + pollId);
     localStorage.removeItem('voted_' + pollId);
-    showToast('Poll deleted successfully', 'success');
+    showToast('Your poll has been deleted', 'success');
     allPolls = allPolls.filter((p) => p._id !== pollId);
     renderPolls(allPolls);
   } catch (err) {

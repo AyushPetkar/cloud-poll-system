@@ -44,6 +44,10 @@ const PollSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+    creatorToken: {
+      type: String,
+      required: true,
+    },
   },
   {
     timestamps: true,

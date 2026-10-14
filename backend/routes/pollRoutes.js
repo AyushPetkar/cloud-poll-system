@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
 const Poll = require('../models/Poll');
 
 // 1. GET ALL POLLS (filtered by groupCode and optional search)
@@ -62,11 +63,13 @@ router.post('/', async (req, res) => {
     }
 
     const cleanGroup = (groupCode || 'general').trim().toLowerCase();
+    const creatorToken = crypto.randomBytes(16).toString('hex');
 
     const newPoll = await Poll.create({
       question: question.trim(),
       category: category ? category.trim() : 'General',
       groupCode: cleanGroup,
+      creatorToken: creatorToken,
       options: formattedOptions,
       totalVotes: 0,
     });
@@ -74,6 +77,7 @@ router.post('/', async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Poll created successfully',
+      creatorToken: creatorToken,
       data: newPoll,
     });
   } catch (error) {
@@ -132,23 +136,29 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// 6. DELETE POLL (Protected with Admin Key)
+// 6. DELETE POLL (Only the Creator or Master Admin can delete)
 router.delete('/:id', async (req, res) => {
   try {
-    const adminKey = req.headers['x-admin-key'] || req.body?.adminKey;
-    const expectedKey = process.env.ADMIN_KEY || 'admin123';
-
-    if (!adminKey || adminKey !== expectedKey) {
-      return res.status(401).json({
-        success: false,
-        message: 'Unauthorized: Invalid Admin Password',
-      });
-    }
-
-    const poll = await Poll.findByIdAndDelete(req.params.id);
+    const poll = await Poll.findById(req.params.id);
     if (!poll) {
       return res.status(404).json({ success: false, message: 'Poll not found' });
     }
+
+    const clientCreatorToken = req.headers['x-creator-token'] || req.body?.creatorToken;
+    const adminKey = req.headers['x-admin-key'] || req.body?.adminKey;
+    const expectedAdminKey = process.env.ADMIN_KEY || 'admin123';
+
+    const isCreator = clientCreatorToken && clientCreatorToken === poll.creatorToken;
+    const isAdmin = adminKey && adminKey === expectedAdminKey;
+
+    if (!isCreator && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden: Only the person who created this poll can delete it.',
+      });
+    }
+
+    await Poll.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'Poll deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
