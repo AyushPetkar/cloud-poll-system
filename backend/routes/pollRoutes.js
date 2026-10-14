@@ -129,9 +129,19 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// 6. DELETE POLL
+// 6. DELETE POLL (Protected with Admin Key)
 router.delete('/:id', async (req, res) => {
   try {
+    const adminKey = req.headers['x-admin-key'] || req.body?.adminKey;
+    const expectedKey = process.env.ADMIN_KEY || 'admin123';
+
+    if (!adminKey || adminKey !== expectedKey) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized: Invalid Admin Password',
+      });
+    }
+
     const poll = await Poll.findByIdAndDelete(req.params.id);
     if (!poll) {
       return res.status(404).json({ success: false, message: 'Poll not found' });

@@ -299,18 +299,26 @@ async function castVote(pollId, optionId) {
   }
 }
 
-// 5. Delete Poll (DELETE /api/polls/:id)
+// 5. Delete Poll (DELETE /api/polls/:id - Protected with Admin Password)
 async function deletePoll(pollId) {
-  if (!confirm('Are you sure you want to remove this poll?')) return;
+  const adminPassword = prompt('🔒 Admin Access Required\nEnter the Admin Password to delete this poll:');
+  if (adminPassword === null) return; // User cancelled
+  if (!adminPassword.trim()) {
+    return showToast('Admin password is required to delete polls', 'error');
+  }
 
   try {
     const res = await fetch(`${API_BASE_URL}/api/polls/${pollId}`, {
       method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-key': adminPassword.trim(),
+      },
     });
 
     const result = await res.json();
     if (!res.ok || !result.success) {
-      throw new Error(result.message || 'Failed to delete poll');
+      throw new Error(result.message || 'Unauthorized or failed to delete poll');
     }
 
     localStorage.removeItem('voted_' + pollId);
